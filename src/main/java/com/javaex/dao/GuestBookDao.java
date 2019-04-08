@@ -1,101 +1,30 @@
 package com.javaex.dao;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.ibatis.session.SqlSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 
 import com.javaex.vo.GuestBookVo;
 
+@Repository
 public class GuestBookDao {
-	private static GuestBookDao instance = new GuestBookDao();
 	
-	private Connection conn;
-	private Statement stmt;
-	private ResultSet rs;
-	private PreparedStatement pstm;
-	
-	private final String url = "jdbc:oracle:thin:@192.168.56.101:1521:xe";
-	private final String username = "webdb";
-	private final String password = "webdb";
-	
-	private GuestBookDao() {
-		try {
-			Class.forName("oracle.jdbc.driver.OracleDriver");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public static GuestBookDao getInstance() {
-		return instance;
-	}
-	
-	private void getConnection() {
-		try {
-			conn = DriverManager.getConnection(url, username, password);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	private void closeConnection() {
-		try {
-			if(rs != null)
-				rs.close();
-			if(stmt != null)
-				stmt.close();
-			if(pstm != null)
-				pstm.close();
-			if(conn != null)
-				conn.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+	@Autowired
+	private SqlSession sqlsession;
 	
 	public List<GuestBookVo> getList(){
-		getConnection();
-		
-		List<GuestBookVo> list = new ArrayList<GuestBookVo>();
-		StringBuffer sb = new StringBuffer();
-		
-		sb.append("SELECT 	NO, ");
-		sb.append("			NAME, ");
-		sb.append("			PASSWORD, ");
-		sb.append("			CONTENT, ");
-		sb.append("			TO_CHAR(REG_DATE, 'YYYY-MM-DD HH24:MI:SS') as REG_DATE ");
-		sb.append("FROM		GUESTBOOK ");
-		sb.append("ORDER BY	NO DESC");
-		
-		String sql = sb.toString();
-		
-		try {
-			stmt = conn.createStatement();
-			rs = stmt.executeQuery(sql);
-			
-			GuestBookVo gstInfo;
-			
-			while(rs.next()) {
-				gstInfo = new GuestBookVo(rs.getInt("NO"), 
-										  rs.getString("NAME"),
-										  rs.getString("PASSWORD"),
-										  rs.getString("CONTENT"),
-										  rs.getString("REG_DATE"));
-				list.add(gstInfo);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			closeConnection();
-		}
-		
-		return list;
+		return sqlsession.selectList("guestbook.selectList");
 	}
 	
+	public int insert(GuestBookVo vo) {
+		return sqlsession.insert("guestbook.insertGuest", vo);
+	}
+	public int delete(GuestBookVo vo) {
+		return sqlsession.delete("guestbook.deleteGuest", vo);
+	}
+	/*
 	public int insert(GuestBookVo vo) {
 		getConnection();
 		StringBuffer sb = new StringBuffer();
@@ -157,4 +86,5 @@ public class GuestBookDao {
 		cnt++;
 		return cnt;
 	}
+	*/
 }
